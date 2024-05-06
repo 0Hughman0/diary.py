@@ -34,13 +34,11 @@ jobs:
           pip freeze
 
       - name: Build Executable
-        run: pipenv run python -m nuitka diary.py --include-package-data=template.txt --output-dir=build --standalone
+        run: pipenv run python -m nuitka diary.py --include-package-data=diary=template.txt --output-dir=build --standalone --assume-yes-for-downloads
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/*.exe
-            build/*.bin
-            build/*.app/**/*
+            build/**
