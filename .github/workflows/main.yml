@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install --user pipenv
+          pip install pipenv
           pipenv install --dev
 
       - name: Build Executable
