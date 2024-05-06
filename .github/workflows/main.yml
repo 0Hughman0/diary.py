@@ -41,4 +41,4 @@ jobs:
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/**
+            build/*.dist/**
