@@ -6,40 +6,36 @@ Diary entries are encrypted on using a password, via the `cryptography` package.
 
 ## Installation
 
-```
-git clone https://github.com/0Hughman0/diary.py
-cd diary.py
-pipenv shell
-```
+Head to the [Releases](https://github.com/0Hughman0/diary.py/releases/tag/v0.1.0) page and download the appropriate build, unzip and use.
 
 ## Usage
 
 To make an entry:
 
 ```
-python diary.py new
+diary new
 ```
 
 To list entries:
 
 ```
-python diary.py list
+diary list
 ```
 
 To read an entry:
 
 ```
-python diary.py read 0  # first entry
+diary read 0  # first entry
 ```
 
 ```
-python diary.py read -1  # most recent entry
+diary read -1  # most recent entry
 ```
 
 For full command line options:
 
 ```
-python diary.py -h
+diary -h
 ```
 
 ## Advanced Configuration
