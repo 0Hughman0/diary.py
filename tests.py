@@ -13,6 +13,7 @@ with open('template.txt') as fs:
     TEMPLATE_CONTENT = fs.read()
 
 TODAY_FILE = f'{str(datetime.date.today())}.txt'
+ONE_DAY = datetime.timedelta(days=1)
 
 
 @pytest.fixture
@@ -159,35 +160,38 @@ def test_new(setup_main, patch_editor, tmp_path):
 
 def test_read(setup_main, patch_editor, tmp_path):
     decoder, encoder = setup_main
+    
+    dates = []
 
-    editor = patch_editor('read test entry', 0)
-
-    diary.main(['new'])
-
+    for i in range(5):
+        editor = patch_editor(f'read test entry {4 - i}', 0)
+        date = datetime.date.today() - (ONE_DAY * i)
+        dates.append(date)
+        
+        diary.main(['new', '-n', str(date)])
+    
     editor = patch_editor(None, 0)
 
     diary.main(['read'])
 
-    assert editor.opened_content == 'read test entry'
+    assert editor.opened_content == 'read test entry 4'
 
     # test pass integer
 
     diary.main(['read', '-n', '0'])
 
-    assert editor.opened_content == 'read test entry'
+    assert editor.opened_content == 'read test entry 0'
 
 
 def test_list(setup_main, patch_editor, tmp_path):
     decoder, encoder = setup_main
-
-    one_day = datetime.timedelta(days=1)
 
     editor = patch_editor('test list content', 0)
 
     dates = []
 
     for i in range(5):
-        date = datetime.date.today() - (one_day * i)
+        date = datetime.date.today() - (ONE_DAY * i)
         dates.append(date)
         
         diary.main(['new', '-n', str(date)])
