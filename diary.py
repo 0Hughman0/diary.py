@@ -7,6 +7,7 @@ import datetime
 import getpass
 import argparse
 import os
+import sys
 
 from cryptography.fernet import Fernet
 
@@ -18,7 +19,7 @@ TEXT_EDITOR = os.getenv('DIARY_TEXT_EDITOR', "C:/Program Files/Notepad++/notepad
 
 TEXT_EDITOR_READ_OPTIONS = os.getenv('DIARY_TEXT_EDITOR_READ_OPTIONS',
                                      ','.join(['-nosession', '-notabbar', '-multiInst', '-ro'])).split(',')
-TEXT_EDITOR_NEW_OPTIONS = os.getenv('DIARY_TEXT_EDITOR_READ_OPTIONS', 
+TEXT_EDITOR_NEW_OPTIONS = os.getenv('DIARY_TEXT_EDITOR_NEW_OPTIONS',
                                     ','.join(['-nosession', '-notabbar', '-multiInst',])).split(',')
 
 DIARY_DIR = os.getenv('DIARY_DIR', "~/diary")
@@ -94,17 +95,35 @@ def get_entry_list(diary_dir) -> list[pathlib.Path]:
     return entries
 
 
-def write(name, template, diary_dir):
+def parse_name(name, entry_list):
     if name is None:
         name = f'{str(datetime.date.today())}.txt'
-    elif not name.endswith('.txt'):
+
+    name_is_index = False
+    
+    try:
+        index = int(name)
+        name_is_index = True
+    except ValueError:
+        name_is_index = False
+    
+    if name_is_index:
+        name = entry_list[index].name
+    
+    if not name.endswith('.txt'):
         name = name + '.txt'
 
+    return name
+
+
+def write(name, template, diary_dir):
     diary_dir = pathlib.Path(diary_dir).expanduser()
 
     if not diary_dir.exists():
         print("Creating diary directory:", diary_dir)
         diary_dir.mkdir()
+
+    name = parse_name(name, get_entry_list(diary_dir))
 
     file = diary_dir / name
 
@@ -123,29 +142,13 @@ def write(name, template, diary_dir):
         f.write(cyphertext)
 
 
-def read(input: str, diary_dir):
+def read(name: str, diary_dir):
     diary_dir = pathlib.Path(diary_dir).expanduser()
 
-    if input is None:
-        input = str(datetime.date.today())
+    name = parse_name(name, get_entry_list(diary_dir))
 
-    input_is_index = False
-    
-    try:
-        index = int(input)
-        input_is_index = True
-    except ValueError:
-        input_is_index = False
-    
-    if input_is_index:
-        entries = get_entry_list(diary_dir)
-        file = entries[index]
-    else:
-        if not input.endswith('.txt'):
-            input = input + '.txt'
+    file = pathlib.Path(name)
 
-        file = pathlib.Path(input)
-    
     if not file.exists():
         file = diary_dir / file
 
@@ -177,23 +180,23 @@ def list_entries(diary_dir):
     return entries
 
 
-def main():
+def main(args):
     app = argparse.ArgumentParser(description="Encrypted diary maker")
     app.add_argument('cmd', choices=['new', 'read', 'list'], help="New, create new entry. Read, read a specific entry. List, list entries.")
     app.add_argument('-n', '--name', help="Name of diary entry file, defaults to today's date. For read can also be an index, corresponding to output of list.")
     app.add_argument('-t', '--template', default='template.txt', help="Template to use for diary entry.")
     app.add_argument('-d', '--diary-dir', default=DIARY_DIR, help="Directory to put the diary entries into.")
 
-    args = app.parse_args()
+    args = app.parse_args(args)
 
     match args.cmd:
         case 'new':
-            write(args.name, args.template, args.diary_dir)
+            return write(args.name, args.template, args.diary_dir)
         case 'read':
-            read(args.name, args.diary_dir)
+            return read(args.name, args.diary_dir)
         case 'list':
-            list_entries(args.diary_dir)
+            return list_entries(args.diary_dir)
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

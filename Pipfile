@@ -8,6 +8,8 @@ cryptography = "*"
 
 [dev-packages]
 nuitka = "*"
+pytest = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.11"
