@@ -1,0 +1,32 @@
+name: Build and Test
+
+on: 
+  - push
+  - pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x64'
+          cache: pipenv
+      - name: Install Dependencies
+        run: |
+          pip freeze
+          curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
+          pipenv install --dev
+      - name: Test with pytest
+        run: |
+          pipenv run pytest tests.py --cov
