@@ -217,7 +217,7 @@ def list_entries(diary_dir):
 def main(args):
     app = argparse.ArgumentParser(description="Encrypted diary maker")
     app.add_argument('cmd', choices=['new', 'read', 'list'], help="New, create new entry. Read, read a specific entry. List, list entries.")
-    app.add_argument('-n', '--name', help="Name of diary entry file, defaults to today's date. For read can also be an index, corresponding to output of list.")
+    app.add_argument('-n', '--name', help="Name of diary entry file, defaults to today's date. For new/ read can also be an index, corresponding days since first entry - negtive days start at today.")
     app.add_argument('-t', '--template', default='template.txt', help="Template to use for diary entry.")
     app.add_argument('-d', '--diary-dir', default=DIARY_DIR, help="Directory to put the diary entries into.")
 
