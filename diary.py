@@ -14,6 +14,8 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
+ONE_DAY = datetime.timedelta(days=1)
+
 SALT = os.getenv('DIARY_SALT', '\xf07\xc1:\xee:P^\x84\xd5\xf5\xa2c}~\xf1').encode()
 TEXT_EDITOR = os.getenv('DIARY_TEXT_EDITOR', "C:/Program Files/Notepad++/notepad++.exe")
 
@@ -87,15 +89,38 @@ def get_key():
     return keyify_pwd(pwd)
 
 
-def get_entry_list(diary_dir) -> list[pathlib.Path]:
-    entries = [entry for entry in diary_dir.iterdir() if entry.is_file()]
+def get_entry_list(diary_dir: pathlib.Path) -> tuple[list[tuple[datetime.date, pathlib.Path]], list[pathlib.Path], datetime.date]:
+    date_files = []
+    non_date_files = []
+
+    for entry in diary_dir.iterdir():
+        if not entry.is_file():
+            continue
+
+        try:
+            date = datetime.datetime.strptime(entry.name, '%Y-%m-%d.txt').date()
+            date_files.append((date, entry))
+        except ValueError:
+            non_date_files.append(entry)
     
-    entries.sort()
+    date_files.sort(key=lambda v: v[0])
 
-    return entries
+    if date_files:
+        day_zero = date_files[0][0]
+    else:
+        day_zero = datetime.date.today()
+
+    return date_files, non_date_files, day_zero
 
 
-def parse_name(name, entry_list):
+def int_to_date(day_zero: datetime.date, nafter: int) -> datetime.date:
+    if nafter >= 0:
+        return day_zero + ONE_DAY * nafter
+    else:
+        return datetime.date.today() + (ONE_DAY * (nafter + 1))
+
+
+def parse_name(name, day_zero):
     if name is None:
         name = f'{str(datetime.date.today())}.txt'
 
@@ -108,7 +133,7 @@ def parse_name(name, entry_list):
         name_is_index = False
     
     if name_is_index:
-        name = entry_list[index].name
+        name = str(int_to_date(day_zero, index))
     
     if not name.endswith('.txt'):
         name = name + '.txt'
@@ -123,7 +148,9 @@ def write(name, template, diary_dir):
         print("Creating diary directory:", diary_dir)
         diary_dir.mkdir()
 
-    name = parse_name(name, get_entry_list(diary_dir))
+    date_list, nondate_list, day_zero = get_entry_list(diary_dir)
+
+    name = parse_name(name, day_zero)
 
     file = diary_dir / name
 
@@ -145,7 +172,9 @@ def write(name, template, diary_dir):
 def read(name: str, diary_dir):
     diary_dir = pathlib.Path(diary_dir).expanduser()
 
-    name = parse_name(name, get_entry_list(diary_dir))
+    date_list, nondate_list, day_zero = get_entry_list(diary_dir)
+
+    name = parse_name(name, day_zero)
 
     file = pathlib.Path(name)
 
@@ -172,12 +201,17 @@ def list_entries(diary_dir):
 
     print("Entries in", diary_dir)
 
-    entries = get_entry_list(diary_dir)
+    date_entries, nondate_entries, day_zero = get_entry_list(diary_dir)
 
-    for i, entry in enumerate(entries):
-        print(f'{i}:',  entry.name)
+    print("Dated entries:")
 
-    return entries
+    for date, entry in date_entries:
+
+        print(f'{(date - day_zero).days}:',  entry.name)
+
+    print("Non dated entries:")
+
+    return date_entries, nondate_entries
 
 
 def main(args):

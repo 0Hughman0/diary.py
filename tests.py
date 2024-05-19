@@ -164,7 +164,7 @@ def test_read(setup_main, patch_editor, tmp_path):
     dates = []
 
     for i in range(5):
-        editor = patch_editor(f'read test entry {4 - i}', 0)
+        editor = patch_editor(f'read test entry today - {i}', 0)
         date = datetime.date.today() - (ONE_DAY * i)
         dates.append(date)
         
@@ -174,13 +174,17 @@ def test_read(setup_main, patch_editor, tmp_path):
 
     diary.main(['read'])
 
-    assert editor.opened_content == 'read test entry 4'
+    assert editor.opened_content == 'read test entry today - 0'
+
+    diary.main(['read', '-n', '-1'])
+
+    assert editor.opened_content == 'read test entry today - 0'
 
     # test pass integer
 
     diary.main(['read', '-n', '0'])
 
-    assert editor.opened_content == 'read test entry 0'
+    assert editor.opened_content == 'read test entry today - 4'
 
 
 def test_list(setup_main, patch_editor, tmp_path):
@@ -198,6 +202,6 @@ def test_list(setup_main, patch_editor, tmp_path):
 
     dates.sort()
     
-    entries = diary.main(['list'])
+    dated_entries, non_dated_entries = diary.main(['list'])
 
-    assert [e.name for e in entries] == [f'{str(e)}.txt' for e in dates]
+    assert [p.name for d, p in dated_entries] == [f'{str(e)}.txt' for e in dates]
