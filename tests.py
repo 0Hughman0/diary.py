@@ -134,6 +134,25 @@ def test_new(setup_main, patch_editor, tmp_path):
     assert file.exists()
     assert decoder(file.read_bytes()) == b'test content custom name'
 
+    # test int name
+    file = tmp_path / TODAY_FILE
+    file.unlink()  # delete previous entry... these tests are not isolated.
+
+    editor = patch_editor('test content int name', returncode=0)
+    
+    diary.main(['new', '-n', '-1'])  # today
+
+    assert file.exists()
+    assert decoder(file.read_bytes()) == b'test content int name'
+
+    yesterday = tmp_path / f'{str(datetime.date.today() - ONE_DAY)}.txt'
+
+    assert not yesterday.exists()
+
+    diary.main(['new', '-n', '-2'])  # yesteday
+
+    assert yesterday.exists()
+
     # test custom tempalte
     template_path = tmp_path / 'custom_template.txt'
     template_path.write_text('test custom template')
@@ -200,8 +219,12 @@ def test_list(setup_main, patch_editor, tmp_path):
         
         diary.main(['new', '-n', str(date)])
 
+    diary.main(['new', '-n', 'some nonsense'])
+
     dates.sort()
     
     dated_entries, non_dated_entries = diary.main(['list'])
 
     assert [p.name for d, p in dated_entries] == [f'{str(e)}.txt' for e in dates]
+
+    assert 'some nonsense.txt' in [p.name for p in non_dated_entries]
