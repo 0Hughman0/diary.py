@@ -211,6 +211,9 @@ def list_entries(diary_dir):
 
     print("Non dated entries:")
 
+    for entry in nondate_entries:
+        print(entry.name)
+
     return date_entries, nondate_entries
 
 
