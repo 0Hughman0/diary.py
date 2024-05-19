@@ -134,6 +134,25 @@ def test_new(setup_main, patch_editor, tmp_path):
     assert file.exists()
     assert decoder(file.read_bytes()) == b'test content custom name'
 
+    # test int name
+    file = tmp_path / TODAY_FILE
+    file.unlink()  # delete previous entry... these tests are not isolated.
+
+    editor = patch_editor('test content int name', returncode=0)
+    
+    diary.main(['new', '-n', '-1'])  # today
+
+    assert file.exists()
+    assert decoder(file.read_bytes()) == b'test content int name'
+
+    yesterday = tmp_path / f'{str(datetime.date.today() - ONE_DAY)}.txt'
+
+    assert not yesterday.exists()
+
+    diary.main(['new', '-n', '-2'])  # yesteday
+
+    assert yesterday.exists()
+
     # test custom tempalte
     template_path = tmp_path / 'custom_template.txt'
     template_path.write_text('test custom template')
@@ -164,7 +183,7 @@ def test_read(setup_main, patch_editor, tmp_path):
     dates = []
 
     for i in range(5):
-        editor = patch_editor(f'read test entry {4 - i}', 0)
+        editor = patch_editor(f'read test entry today - {i}', 0)
         date = datetime.date.today() - (ONE_DAY * i)
         dates.append(date)
         
@@ -174,13 +193,17 @@ def test_read(setup_main, patch_editor, tmp_path):
 
     diary.main(['read'])
 
-    assert editor.opened_content == 'read test entry 4'
+    assert editor.opened_content == 'read test entry today - 0'
+
+    diary.main(['read', '-n', '-1'])
+
+    assert editor.opened_content == 'read test entry today - 0'
 
     # test pass integer
 
     diary.main(['read', '-n', '0'])
 
-    assert editor.opened_content == 'read test entry 0'
+    assert editor.opened_content == 'read test entry today - 4'
 
 
 def test_list(setup_main, patch_editor, tmp_path):
@@ -196,8 +219,12 @@ def test_list(setup_main, patch_editor, tmp_path):
         
         diary.main(['new', '-n', str(date)])
 
+    diary.main(['new', '-n', 'some nonsense'])
+
     dates.sort()
     
-    entries = diary.main(['list'])
+    dated_entries, non_dated_entries = diary.main(['list'])
 
-    assert [e.name for e in entries] == [f'{str(e)}.txt' for e in dates]
+    assert [p.name for d, p in dated_entries] == [f'{str(e)}.txt' for e in dates]
+
+    assert 'some nonsense.txt' in [p.name for p in non_dated_entries]
